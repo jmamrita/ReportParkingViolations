@@ -41,6 +41,7 @@ export default function App() {
       setHasMediaLibraryPermission(mediaLibraryPermission.status === "granted");
     })();
   }, []);
+
   const [hasCameraPermission, setHasCameraPermission] = useState(null);
   const [isCameraOpen, setIsCameraOpen] = useState();
   let cameraRef = useRef();
@@ -93,17 +94,9 @@ export default function App() {
   };
 
   // Set photos related code
+  const [type, setType] = useState();
   const [licensePhoto, setLicensePhoto] = useState();
   const [vehiclePhoto, setVehiclePhoto] = useState();
-  if (hasCameraPermission === undefined) {
-    return <Text>Requesting permissions...</Text>;
-  } else if (!hasCameraPermission) {
-    return (
-      <Text>
-        Permission for camera not granted. Please change this in settings.
-      </Text>
-    );
-  }
 
   return (
     <View style={styles.container}>
@@ -140,10 +133,44 @@ export default function App() {
         {value[0] === "8" && (
           <TextInput placeholder="Enter parking violation" />
         )}
-        <Button title="Pick vehicle photo" onPress={pickVehicleImage} />
-        <Button title="Pick license photo" onPress={pickLicenseImage} />
-        <Button title="Take license photo" onPress={takeLicenseImage} />
-        <Button title="Take vehicle photo" onPress={takeVehicleImage} />
+        <Button
+          title="Upload vehicle photo"
+          onPress={() =>
+            Alert.alert("Upload vehicle photo", "My Alert Msg", [
+              {
+                text: "Take a pic",
+                onPress: takeVehicleImage,
+              },
+              {
+                text: "Upload from gallery",
+                onPress: pickVehicleImage,
+              },
+              {
+                text: "Cancel",
+                style: "cancel",
+              },
+            ])
+          }
+        />
+        <Button
+          title="Upload license photo"
+          onPress={() =>
+            Alert.alert("Upload license photo", "My Alert Msg", [
+              {
+                text: "Take a pic",
+                onPress: takeLicenseImage,
+              },
+              {
+                text: "Upload from gallery",
+                onPress: pickLicenseImage,
+              },
+              {
+                text: "Cancel",
+                style: "cancel",
+              },
+            ])
+          }
+        />
         <Text>License photo</Text>
         {licensePhoto && (
           <ImageBackground
