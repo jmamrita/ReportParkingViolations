@@ -1,64 +1,115 @@
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useState } from "react";
-import { StyleSheet, Button, Image, View, Text } from "react-native";
+import React, { useEffect, useState, useRef } from "react";
+import {
+  StyleSheet,
+  Button,
+  Image,
+  View,
+  Text,
+  SafeAreaView,
+  Alert,
+  ImageBackground,
+} from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import DropDownPicker from "react-native-dropdown-picker";
+import { Camera } from "expo-camera";
+import * as MediaLibrary from "expo-media-library";
 
 export default function App() {
+  // Dropdown related code
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState([]);
   const [items, setItems] = useState([
-    { label: "Spain", value: "spain" },
-    { label: "Madrid", value: "madrid" },
-    { label: "Barcelona", value: "barcelona" },
-    { label: "Italy", value: "italy" },
-    { label: "Rome", value: "rome" },
-    { label: "Finland", value: "finland" },
+    { label: "Improper parking in 2 spots", value: "1" },
+    { label: "Improper parking by blocking road ", value: "2" },
+    { label: "Parking without a permit/registration", value: "3" },
+    { label: "Parking in no-parking zone", value: "4" },
+    { label: "Expired or missing license plates or registration", value: "5" },
+    { label: "Parking in a reserved or restricted area", value: "6" },
+    { label: "Parking in a special spot without proper permit", value: "7" },
+    { label: "Other", value: "6" },
   ]);
-  const [image, setImage] = useState(null);
-  const [hasCameraPermission, setCameraPermission] = useState(null);
+
+  // Camera related code
   useEffect(() => {
     (async () => {
-      const cameraPermission =
-        await ImagePicker.requestCameraPermissionsAsync();
-      setCameraPermission(cameraPermission === "granted");
+      const cameraPermission = await Camera.requestCameraPermissionsAsync();
+      const mediaLibraryPermission =
+        await MediaLibrary.requestPermissionsAsync();
+      setHasCameraPermission(cameraPermission.status === "granted");
+      setHasMediaLibraryPermission(mediaLibraryPermission.status === "granted");
     })();
   }, []);
+  const [hasCameraPermission, setHasCameraPermission] = useState(null);
+  const [isCameraOpen, setIsCameraOpen] = useState();
+  const cameraRef = useRef(null);
+  const takeVehicleImage = async () => {
+    setIsCameraOpen(true);
+    let options = {
+      quality: 1,
+      base64: true,
+      exif: false,
+    };
+    let newPhoto = await cameraRef.current.takePictureAsync(options);
+    setVehiclePhoto(newPhoto);
+    setIsCameraOpen(false);
+  };
+  const takeLicenseImage = async () => {
+    setIsCameraOpen(true);
+    let options = {
+      quality: 1,
+      base64: true,
+      exif: false,
+    };
+    let newPhoto = await cameraRef.current.takePictureAsync(options);
+    setLicensePhoto(newPhoto);
+    setIsCameraOpen(false);
+  };
 
-  const pickImage = async () => {
-    // No permissions request is necessary for launching the image library
+  // Media library related code
+  const [hasMediaLibraryPermission, setHasMediaLibraryPermission] = useState();
+  const pickVehicleImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
     });
-    console.log(result);
     if (!result.canceled) {
-      setImage(result.assets[0].uri);
+      setVehiclePhoto(result.assets[0].uri);
     }
   };
-
-  const takeImage = async () => {
-    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-    if (permissionResult.granted === false) {
-      alert("You've refused to allow this appp to access your camera!");
-      return;
-    }
-    let result = await ImagePicker.launchCameraAsync({
+  const pickLicenseImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
     });
-    console.log(result);
     if (!result.canceled) {
-      setImage(result.assets[0].uri);
+      setLicensePhoto(result.assets[0].uri);
     }
   };
 
+  // Set photos related code
+  const [licensePhoto, setLicensePhoto] = useState();
+  const [vehiclePhoto, setVehiclePhoto] = useState();
+
   return (
     <View style={styles.container}>
+      {/* Camera screen */}
+      {isCameraOpen && (
+        <Camera
+          style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
+          ref={cameraRef}
+        >
+          <View style={styles.buttonContainer}>
+            <Button title="Take Pic" onPress={takeVehicleImage} />
+          </View>
+          <StatusBar style="auto" />
+        </Camera>
+      )}
+      {/* Landing Screen */}
       <View
         style={{
           flex: 1,
@@ -77,17 +128,21 @@ export default function App() {
           multiple={true}
           mode="BADGE"
         />
-      </View>
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-        <Button title="Pick an image from camera roll" onPress={pickImage} />
-        {image && (
-          <Image source={{ uri: image }} style={{ width: 200, height: 200 }} />
+        <Button title="Pick vehicle photo" onPress={pickVehicleImage} />
+        <Button title="Pick license photo" onPress={pickLicenseImage} />
+        <Button title="Take license photo" onPress={takeLicenseImage} />
+        <Button title="Take vehicle photo" onPress={takeVehicleImage} />
+        {licensePhoto && (
+          <ImageBackground
+            source={{ uri: licensePhoto && licensePhoto.uri }}
+            style={{ width: 200, height: 200 }}
+          />
         )}
-      </View>
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-        <Button title="Take an image from camera" onPress={takeImage} />
-        {image && (
-          <Image source={{ uri: image }} style={{ width: 200, height: 200 }} />
+        {vehiclePhoto && (
+          <Image
+            source={{ uri: vehiclePhoto }}
+            style={{ width: 200, height: 200 }}
+          />
         )}
       </View>
       <StatusBar style="auto" />
