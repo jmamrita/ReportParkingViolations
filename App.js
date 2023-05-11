@@ -45,7 +45,7 @@ export default function App() {
   const [hasCameraPermission, setHasCameraPermission] = useState(null);
   const [isCameraOpen, setIsCameraOpen] = useState();
   let cameraRef = useRef();
-  const takeVehicleImage = async () => {
+  const takeImage = async () => {
     setIsCameraOpen(true);
     let options = {
       quality: 1,
@@ -53,24 +53,15 @@ export default function App() {
       exif: false,
     };
     let newPhoto = await cameraRef.current.takePictureAsync(options);
-    setVehiclePhoto(newPhoto.uri);
-    setIsCameraOpen(false);
-  };
-  const takeLicenseImage = async () => {
-    setIsCameraOpen(true);
-    let options = {
-      quality: 1,
-      base64: true,
-      exif: false,
-    };
-    let newPhoto = await cameraRef.current.takePictureAsync(options);
-    setLicensePhoto(newPhoto.uri);
+    type === "vehicle"
+      ? setVehiclePhoto(newPhoto.uri)
+      : setLicensePhoto(newPhoto.uri);
     setIsCameraOpen(false);
   };
 
   // Media library related code
   const [hasMediaLibraryPermission, setHasMediaLibraryPermission] = useState();
-  const pickVehicleImage = async () => {
+  const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsEditing: true,
@@ -78,19 +69,29 @@ export default function App() {
       quality: 1,
     });
     if (!result.canceled) {
-      setVehiclePhoto(result.assets[0].uri);
+      type === "vehicle"
+        ? setVehiclePhoto(result.assets[0].uri)
+        : setLicensePhoto(result.assets[0].uri);
     }
   };
-  const pickLicenseImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
-    if (!result.canceled) {
-      setLicensePhoto(result.assets[0].uri);
-    }
+
+  const [data, setData] = useState();
+
+  const fetchData = () => {
+    fetch(
+      "https://dwp-nonprod.azure-api.net/smartparking/v1.0/vehicle/region/1/registration/admin?AS",
+      {
+        headers: {
+          "SmartParking-Apim-Subscription-Key":
+            "296b3ec4113047c0922a3b2f6a282a4e",
+          Authorization: "",
+        },
+      }
+    )
+      .then((response) => response.json())
+      .then((json) => setData(json))
+      .catch((error) => console.error(error));
+    console.log("HERE IS  THE RESULT");
   };
 
   // Set photos related code
@@ -101,92 +102,98 @@ export default function App() {
   return (
     <View style={styles.container}>
       {/* Camera screen */}
-      {isCameraOpen && (
+      {isCameraOpen ? (
         <Camera
           style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
           ref={cameraRef}
         >
           <View style={styles.buttonContainer}>
-            <Button title="Take Pic" onPress={takeVehicleImage} />
-          </View>
-          <View style={styles.buttonContainer}>
-            <Button title="Take Pic" onPress={takeLicenseImage} />
+            <Button title="Take Pic" onPress={takeImage} />
           </View>
           <StatusBar style="auto" />
         </Camera>
+      ) : (
+        <>
+          <View
+            style={{
+              paddingHorizontal: 15,
+            }}
+          >
+            <DropDownPicker
+              open={open}
+              value={value}
+              items={items}
+              setOpen={setOpen}
+              setValue={setValue}
+              setItems={setItems}
+              maxHeight={400}
+            />
+            {value[0] === "8" && (
+              <TextInput placeholder="Enter parking violation" />
+            )}
+            <Button
+              title="Upload vehicle photo"
+              onPress={() => {
+                setType("vehicle");
+                Alert.alert("Upload vehicle photo", "My Alert Msg", [
+                  {
+                    text: "Take a pic",
+                    onPress: takeImage,
+                  },
+                  {
+                    text: "Upload from gallery",
+                    onPress: pickImage,
+                  },
+                  {
+                    text: "Cancel",
+                    style: "cancel",
+                  },
+                ]);
+              }}
+            />
+            <Button
+              title="Upload license photo"
+              onPress={() => {
+                setType("license");
+                Alert.alert("Upload license photo", "My Alert Msg", [
+                  {
+                    text: "Take a pic",
+                    onPress: takeImage,
+                  },
+                  {
+                    text: "Upload from gallery",
+                    onPress: pickImage,
+                  },
+                  {
+                    text: "Cancel",
+                    style: "cancel",
+                  },
+                ]);
+              }}
+            />
+            <Button title="Make fetch call" onPress={fetchData} />
+            {licensePhoto && (
+              <>
+                <Text>License photo</Text>
+                <ImageBackground
+                  source={{ uri: licensePhoto }}
+                  style={{ width: 200, height: 200 }}
+                />
+              </>
+            )}
+            {vehiclePhoto && (
+              <>
+                <Text>Vehicle photo</Text>
+                <ImageBackground
+                  source={{ uri: vehiclePhoto }}
+                  style={{ width: 200, height: 200 }}
+                />
+              </>
+            )}
+          </View>
+          <StatusBar style="auto" />
+        </>
       )}
-      {/* Landing Screen */}
-      <View
-        style={{
-          paddingHorizontal: 15,
-        }}
-      >
-        <DropDownPicker
-          open={open}
-          value={value}
-          items={items}
-          setOpen={setOpen}
-          setValue={setValue}
-          setItems={setItems}
-          maxHeight={400}
-        />
-        {value[0] === "8" && (
-          <TextInput placeholder="Enter parking violation" />
-        )}
-        <Button
-          title="Upload vehicle photo"
-          onPress={() =>
-            Alert.alert("Upload vehicle photo", "My Alert Msg", [
-              {
-                text: "Take a pic",
-                onPress: takeVehicleImage,
-              },
-              {
-                text: "Upload from gallery",
-                onPress: pickVehicleImage,
-              },
-              {
-                text: "Cancel",
-                style: "cancel",
-              },
-            ])
-          }
-        />
-        <Button
-          title="Upload license photo"
-          onPress={() =>
-            Alert.alert("Upload license photo", "My Alert Msg", [
-              {
-                text: "Take a pic",
-                onPress: takeLicenseImage,
-              },
-              {
-                text: "Upload from gallery",
-                onPress: pickLicenseImage,
-              },
-              {
-                text: "Cancel",
-                style: "cancel",
-              },
-            ])
-          }
-        />
-        <Text>License photo</Text>
-        {licensePhoto && (
-          <ImageBackground
-            source={{ uri: licensePhoto }}
-            style={{ width: 200, height: 200 }}
-          />
-        )}
-        <Text>Vehicle photo</Text>
-        {vehiclePhoto && (
-          <ImageBackground
-            source={{ uri: vehiclePhoto }}
-            style={{ width: 200, height: 200 }}
-          />
-        )}
-      </View>
-      <StatusBar style="auto" />
     </View>
   );
 }
