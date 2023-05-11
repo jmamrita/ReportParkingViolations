@@ -14,10 +14,10 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   button: {
-    backgroundColor: "blue",
+    backgroundColor: "#6495ED",
     padding: 10,
     borderRadius: 5,
-    width: "50%",
+    minWidth: "50%",
     alignSelf: "center",
   },
   text: {

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity, Image } from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
 
 export const CustomDropdown = ({ options, onSelect }) => {
   const [selectedOption, setSelectedOption] = useState(null);
@@ -13,17 +14,33 @@ export const CustomDropdown = ({ options, onSelect }) => {
 
   return (
     <View>
+      <Text>Choose a parking violation</Text>
       <TouchableOpacity
         onPress={() => setShowOptions(!showOptions)}
-        style={{ borderWidth: 1, borderRadius: 5 }}
+        style={{
+          borderWidth: 1,
+          borderRadius: 5,
+          marginHorizontal: 26,
+          flexDirection: "row",
+          height: 44,
+          padding: 10,
+          justifyContent: "space-between",
+        }}
       >
-        <Text>{selectedOption || "Select a violation"}</Text>
-        <Image />
+        <Text>{selectedOption || "Select a parking violation"}</Text>
+        <MaterialIcons
+          name={showOptions ? "keyboard-arrow-up" : "keyboard-arrow-down"}
+          size={24}
+        />
       </TouchableOpacity>
       {showOptions && (
-        <View>
-          {options.map((option) => (
-            <TouchableOpacity key={option} onPress={() => handleSelect(option)}>
+        <View style={{ borderWidth: 1, borderRadius: 5, marginHorizontal: 26 }}>
+          {options.map((option, index) => (
+            <TouchableOpacity
+              style={{ margin: 10 }}
+              key={index}
+              onPress={() => handleSelect(option)}
+            >
               <Text>{option}</Text>
             </TouchableOpacity>
           ))}

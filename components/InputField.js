@@ -16,7 +16,7 @@ export const InputField = ({ placeholder, inputValue, label }) => {
 
 const styles = StyleSheet.create({
   input: {
-    height: 50,
+    height: 44,
     margin: 12,
     borderWidth: 1,
     padding: 10,

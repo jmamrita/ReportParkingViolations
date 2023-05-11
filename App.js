@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
 import { StyleSheet, View, Text, Alert, TextInput } from "react-native";
-import DropDownPicker from "react-native-dropdown-picker";
 import { Camera } from "expo-camera";
 import { StatusBar } from "expo-status-bar";
 import * as ImagePicker from "expo-image-picker";
@@ -12,15 +11,12 @@ import {
   InputField,
   CustomDropdown,
 } from "./components";
-import { violationList } from "./constants/violationList";
+import { violationOptions } from "./constants";
 
 export default function App() {
   let licensePlate = "";
   let violationDescription = "";
-  const [open, setOpen] = useState(false);
-  const [violation, setViolation] = useState([]);
-  const [items, setItems] = useState(violationList);
-  const options = ["Option 1", "Option 2", "Option 3"];
+  const [violation, setViolation] = useState();
 
   // Camera related code
   useEffect(() => {
@@ -74,7 +70,7 @@ export default function App() {
     }
   };
   const handleSelect = (option) => {
-    console.log(`Selected option: ${option}`);
+    setViolation(option);
   };
   // const [data, setData] = useState();
   // const fetchData = () => {
@@ -157,18 +153,7 @@ export default function App() {
               value={licensePlate}
               inputType={"text"}
             />
-            <View style={{ margin: 12 }}>
-              <DropDownPicker
-                open={open}
-                value={violation}
-                items={items}
-                setOpen={setOpen}
-                setValue={setViolation}
-                setItems={setItems}
-                maxHeight={400}
-              />
-            </View>
-            {violation[0] === "8" && (
+            {violation === "Others" && (
               <InputField
                 inputValue={violationDescription}
                 placeholder={"Describe the parking violation"}
@@ -177,13 +162,12 @@ export default function App() {
             )}
           </View>
           <View>
-            <CustomDropdown options={options} onSelect={handleSelect} />
+            <CustomDropdown
+              options={violationOptions}
+              onSelect={handleSelect}
+            />
           </View>
-          <CustomButton
-            onPress={openAlert}
-            title={"Report Violation"}
-            containerStyle={{ marginTop: 300 }}
-          />
+          <CustomButton onPress={openAlert} title={"Report Violation"} />
           <StatusBar style="auto" />
         </>
       )}
