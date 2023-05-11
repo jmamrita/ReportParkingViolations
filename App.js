@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { StyleSheet, View, Text, Alert, TextInput } from "react-native";
+import { StyleSheet, View, Text, Alert, ScrollView } from "react-native";
 import { Camera } from "expo-camera";
 import { StatusBar } from "expo-status-bar";
 import * as ImagePicker from "expo-image-picker";
@@ -17,6 +17,13 @@ export default function App() {
   let licensePlate = "";
   let violationDescription = "";
   const [violation, setViolation] = useState();
+  const [hasCameraPermission, setHasCameraPermission] = useState();
+  const [hasMediaLibraryPermission, setHasMediaLibraryPermission] = useState();
+  const [isCameraOpen, setIsCameraOpen] = useState();
+  const [licensePhoto, setLicensePhoto] = useState();
+  const [vehiclePhoto, setVehiclePhoto] = useState();
+  const typeRef = useRef();
+  let cameraRef = useRef();
 
   // Camera related code
   useEffect(() => {
@@ -29,9 +36,6 @@ export default function App() {
     })();
   }, []);
 
-  const [hasCameraPermission, setHasCameraPermission] = useState();
-  const [isCameraOpen, setIsCameraOpen] = useState();
-  let cameraRef = useRef();
   const takeImage = async () => {
     if (!hasCameraPermission) {
       Alert.alert("You don't have permission to launch camera");
@@ -44,14 +48,12 @@ export default function App() {
       exif: false,
     };
     let newPhoto = await cameraRef.current.takePictureAsync(options);
-    type === "vehicle"
+    typeRef.current === "vehicle"
       ? setVehiclePhoto(newPhoto.uri)
       : setLicensePhoto(newPhoto.uri);
     setIsCameraOpen(false);
   };
 
-  // Media library related code
-  const [hasMediaLibraryPermission, setHasMediaLibraryPermission] = useState();
   const pickImage = async () => {
     if (!hasMediaLibraryPermission) {
       Alert.alert("You don't have permission to open gallery");
@@ -64,7 +66,7 @@ export default function App() {
       quality: 1,
     });
     if (!result.canceled) {
-      type === "vehicle"
+      typeRef.current === "vehicle"
         ? setVehiclePhoto(result.assets[0].uri)
         : setLicensePhoto(result.assets[0].uri);
     }
@@ -90,26 +92,25 @@ export default function App() {
   //   console.log("HERE IS  THE RESULT");
   // };
 
-  // Set photos related code
-  const [type, setType] = useState();
-  const [licensePhoto, setLicensePhoto] = useState();
-  const [vehiclePhoto, setVehiclePhoto] = useState();
-
   const openAlert = () => {
-    Alert.alert(`Add a ${type} photo`, "Choose from the options below", [
-      {
-        text: "Take a pic",
-        onPress: takeImage,
-      },
-      {
-        text: "Upload from gallery",
-        onPress: pickImage,
-      },
-      {
-        text: "Cancel",
-        style: "cancel",
-      },
-    ]);
+    Alert.alert(
+      `Add a ${typeRef.current} photo`,
+      "Choose from the options below",
+      [
+        {
+          text: "Take a pic",
+          onPress: takeImage,
+        },
+        {
+          text: "Upload from gallery",
+          onPress: pickImage,
+        },
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+      ]
+    );
   };
 
   return (
@@ -117,32 +118,37 @@ export default function App() {
       {isCameraOpen ? (
         <CameraScreen onShutterPress={takeImage} cameraRef={cameraRef} />
       ) : (
-        <>
-          <Text>
-            Fill out all the requirements below before reporting a violation
-          </Text>
+        <ScrollView>
           <View
             style={{
               paddingHorizontal: 15,
             }}
           >
-            <CustomButton
-              title="Upload vehicle photo"
-              onPress={() => {
-                setType("vehicle");
-                openAlert();
-              }}
-            />
-            <CustomButton
-              title="Upload license photo"
-              onPress={() => {
-                setType("license");
-                openAlert();
-              }}
-            />
+            <Text style={{ fontSize: 20, textAlign: "center", margin: 20 }}>
+              Fill out all the requirements below before reporting a violation
+            </Text>
+            <View style={{ borderWidth: 0.5 }} />
+            <View
+              style={{ flexDirection: "row", justifyContent: "space-between" }}
+            >
+              <CustomButton
+                title="Add vehicle's photo"
+                onPress={() => {
+                  typeRef.current = "vehicle";
+                  openAlert();
+                }}
+              />
+              <CustomButton
+                title="Add license plate's photo"
+                onPress={() => {
+                  typeRef.current = "license";
+                  openAlert();
+                }}
+              />
+            </View>
             {/* <CustomButton title="Make fetch call" onPress={fetchData} /> */}
             {licensePhoto && (
-              <ImageView label="License photo" source={vehiclePhoto} />
+              <ImageView label="License photo" source={licensePhoto} />
             )}
             {vehiclePhoto && (
               <ImageView label="Vehicle photo" source={vehiclePhoto} />
@@ -151,25 +157,26 @@ export default function App() {
               label="Enter the license plate"
               placeholder={"Enter the license plate"}
               value={licensePlate}
-              inputType={"text"}
             />
-            {violation === "Others" && (
-              <InputField
-                inputValue={violationDescription}
-                placeholder={"Describe the parking violation"}
-                label="Describe the parking violation"
-              />
-            )}
-          </View>
-          <View>
             <CustomDropdown
               options={violationOptions}
               onSelect={handleSelect}
             />
+            {violation === "Others" && (
+              <InputField
+                value={violationDescription}
+                placeholder={"Describe the parking violation"}
+                label="Describe the parking violation"
+              />
+            )}
+            <CustomButton
+              onPress={openAlert}
+              title={"Report Violation"}
+              containerStyle={{ alignSelf: "center", marginTop: 10 }}
+            />
           </View>
-          <CustomButton onPress={openAlert} title={"Report Violation"} />
           <StatusBar style="auto" />
-        </>
+        </ScrollView>
       )}
     </View>
   );

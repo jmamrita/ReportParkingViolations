@@ -13,27 +13,41 @@ export const CustomDropdown = ({ options, onSelect }) => {
   };
 
   return (
-    <View style={{ marginHorizontal: 26 }}>
-      <Text>Choose a parking violation</Text>
+    <View style={{ marginHorizontal: 12 }}>
+      <Text style={{ marginBottom: 10 }}>Choose a parking violation</Text>
       <TouchableOpacity
         onPress={() => setShowOptions(!showOptions)}
         style={{
           borderWidth: 1,
-          borderRadius: 5,
+          borderBottomLeftRadius: showOptions ? 0 : 5,
+          borderBottomRightRadius: showOptions ? 0 : 5,
+          borderTopLeftRadius: 5,
+          borderTopRightRadius: 5,
           flexDirection: "row",
           height: 44,
-          padding: 10,
+          paddingHorizontal: 10,
           justifyContent: "space-between",
         }}
       >
-        <Text>{selectedOption || "Select a parking violation"}</Text>
+        <Text style={{ textAlign: "center", paddingVertical: 12 }}>
+          {selectedOption || "Select a parking violation"}
+        </Text>
         <MaterialIcons
           name={showOptions ? "keyboard-arrow-up" : "keyboard-arrow-down"}
           size={24}
+          style={{ paddingVertical: 10 }}
         />
       </TouchableOpacity>
       {showOptions && (
-        <View style={{ borderWidth: 1, borderRadius: 5, marginHorizontal: 26 }}>
+        <View
+          style={{
+            borderBottomWidth: 1,
+            borderLeftWidth: 1,
+            borderRightWidth: 1,
+            borderBottomLeftRadius: 5,
+            borderBottomRightRadius: 5,
+          }}
+        >
           {options.map((option, index) => (
             <TouchableOpacity
               style={{ margin: 10 }}

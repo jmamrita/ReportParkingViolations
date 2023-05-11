@@ -15,9 +15,9 @@
     "expo-image-picker": "~14.1.1",
     "expo-media-library": "^15.2.3",
     "expo-status-bar": "~1.4.4",
+    "expo-updates": "~0.16.4",
     "react": "18.2.0",
-    "react-native": "0.71.7",
-    "expo-updates": "~0.16.4"
+    "react-native": "0.71.7"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"

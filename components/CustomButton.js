@@ -15,15 +15,13 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: "#6495ED",
-    padding: 10,
     borderRadius: 5,
-    minWidth: "50%",
-    alignSelf: "center",
+    padding: 10,
+    alignItems: "center",
   },
   text: {
     color: "white",
     fontSize: 16,
-    fontWeight: "bold",
-    textAlign: "center",
+    alignSelf: "flex-start",
   },
 });

@@ -12,7 +12,7 @@ export const ImageView = ({ label, source }) => {
 
 const styles = StyleSheet.create({
   image: {
-    width: 200,
-    height: 200,
+    width: 350,
+    height: 350,
   },
 });

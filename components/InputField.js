@@ -1,15 +1,11 @@
 import { StyleSheet, View, Text, TextInput } from "react-native";
-import React, { useState } from "react";
+import React from "react";
 
-export const InputField = ({ placeholder, inputValue, label }) => {
+export const InputField = ({ placeholder, label }) => {
   return (
     <View style={{ margin: 12 }}>
-      <Text>{label}</Text>
-      <TextInput
-        style={styles.input}
-        value={inputValue}
-        placeholder={placeholder}
-      />
+      <Text style={{ marginBottom: 10 }}>{label}</Text>
+      <TextInput style={styles.input} placeholder={placeholder} />
     </View>
   );
 };
