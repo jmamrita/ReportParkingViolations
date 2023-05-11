@@ -3,7 +3,7 @@ import React, { useState } from "react";
 
 export const InputField = ({ placeholder, inputValue, label }) => {
   return (
-    <View>
+    <View style={{ margin: 12 }}>
       <Text>{label}</Text>
       <TextInput
         style={styles.input}
@@ -17,7 +17,6 @@ export const InputField = ({ placeholder, inputValue, label }) => {
 const styles = StyleSheet.create({
   input: {
     height: 44,
-    margin: 12,
     borderWidth: 1,
     padding: 10,
     borderRadius: 5,

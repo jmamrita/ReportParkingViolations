@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, Image } from "react-native";
+import { View, Text, TouchableOpacity } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 
 export const CustomDropdown = ({ options, onSelect }) => {
@@ -13,14 +13,13 @@ export const CustomDropdown = ({ options, onSelect }) => {
   };
 
   return (
-    <View>
+    <View style={{ marginHorizontal: 26 }}>
       <Text>Choose a parking violation</Text>
       <TouchableOpacity
         onPress={() => setShowOptions(!showOptions)}
         style={{
           borderWidth: 1,
           borderRadius: 5,
-          marginHorizontal: 26,
           flexDirection: "row",
           height: 44,
           padding: 10,
