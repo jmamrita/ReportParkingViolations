@@ -14,8 +14,8 @@ import {
 import { violationOptions } from "./constants";
 
 export default function App() {
-  let licensePlate = "";
-  let violationDescription = "";
+  const [licensePlate, setLicensePlate] = useState("");
+  const [violationDescription, setViolationDescription] = useState("");
   const [violation, setViolation] = useState();
   const [hasCameraPermission, setHasCameraPermission] = useState();
   const [hasMediaLibraryPermission, setHasMediaLibraryPermission] = useState();
@@ -73,6 +73,12 @@ export default function App() {
   };
   const handleSelect = (option) => {
     setViolation(option);
+  };
+  const handleLicensePlateChange = (value) => {
+    setLicensePlate(value);
+  };
+  const handleViolationChange = (value) => {
+    setViolationDescription(value);
   };
   // const [data, setData] = useState();
   // const fetchData = () => {
@@ -156,7 +162,9 @@ export default function App() {
             <InputField
               label="Enter the license plate"
               placeholder={"Enter the license plate"}
-              value={licensePlate}
+              inputValue={licensePlate}
+              onChange={handleLicensePlateChange}
+              multiline={false}
             />
             <CustomDropdown
               options={violationOptions}
@@ -164,9 +172,11 @@ export default function App() {
             />
             {violation === "Others" && (
               <InputField
-                value={violationDescription}
+                inputValue={violationDescription}
                 placeholder={"Describe the parking violation"}
                 label="Describe the parking violation"
+                onChange={handleViolationChange}
+                multiline={true}
               />
             )}
             <CustomButton
