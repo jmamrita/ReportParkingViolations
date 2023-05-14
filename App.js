@@ -1,5 +1,12 @@
 import React, { useEffect, useState, useRef } from "react";
-import { StyleSheet, View, Text, Alert, ScrollView } from "react-native";
+import {
+  StyleSheet,
+  View,
+  Text,
+  Alert,
+  ScrollView,
+  Button,
+} from "react-native";
 import { Camera } from "expo-camera";
 import { StatusBar } from "expo-status-bar";
 import * as ImagePicker from "expo-image-picker";
@@ -12,6 +19,14 @@ import {
   CustomDropdown,
 } from "./components";
 import { violationOptions } from "./constants";
+import * as WebBrowser from "expo-web-browser";
+import {
+  makeRedirectUri,
+  useAuthRequest,
+  useAutoDiscovery,
+} from "expo-auth-session";
+
+WebBrowser.maybeCompleteAuthSession();
 
 export default function App() {
   const [licensePlate, setLicensePlate] = useState("");
@@ -24,6 +39,20 @@ export default function App() {
   const [vehiclePhoto, setVehiclePhoto] = useState();
   const typeRef = useRef();
   let cameraRef = useRef();
+
+  const discovery = useAutoDiscovery(
+    "https://login.microsoftonline.com/72f988bf-86f1-41af-91ab-2d7cd011db47/v2.0"
+  );
+  const [request, response, promptAsync] = useAuthRequest(
+    {
+      clientId: "b56ecdc1-5106-47f3-8777-ad784d1118f6",
+      scopes: ["openid", "profile", "email", "offline_access"],
+      redirectUri: makeRedirectUri({
+        scheme: "reportparkingviolation",
+      }),
+    },
+    discovery
+  );
 
   // Camera related code
   useEffect(() => {
@@ -124,40 +153,97 @@ export default function App() {
       {isCameraOpen ? (
         <CameraScreen onShutterPress={takeImage} cameraRef={cameraRef} />
       ) : (
-        <ScrollView>
+        <ScrollView showsVerticalScrollIndicator={false}>
           <View
             style={{
               paddingHorizontal: 15,
             }}
           >
-            <Text style={{ fontSize: 20, textAlign: "center", margin: 20 }}>
-              Fill out all the requirements below before reporting a violation
+            <Button
+              disabled={!request}
+              title="Login"
+              onPress={() => {
+                promptAsync();
+              }}
+            />
+            <Text
+              style={{
+                fontSize: 24,
+                margin: 20,
+                fontWeight: "bold",
+                textAlign: "center",
+              }}
+            >
+              Report a parking violation
             </Text>
-            <View style={{ borderWidth: 0.5 }} />
+            <View style={{ borderWidth: 0.25 }} />
             <View
-              style={{ flexDirection: "row", justifyContent: "space-between" }}
+              style={{
+                flexDirection: "row",
+              }}
             >
               <CustomButton
-                title="Add vehicle's photo"
+                iconName={vehiclePhoto ? "autorenew" : "add-a-photo"}
+                title={"Vehicle"}
                 onPress={() => {
                   typeRef.current = "vehicle";
                   openAlert();
                 }}
+                containerStyle={{
+                  width: "30%",
+                  margin: 10,
+                }}
               />
+              {vehiclePhoto && (
+                <CustomButton
+                  iconName={"delete"}
+                  containerStyle={{
+                    margin: 10,
+                    alignSelf: "center",
+                  }}
+                  buttonColor="red"
+                  title={"Remove"}
+                  onPress={() => setVehiclePhoto(undefined)}
+                />
+              )}
+            </View>
+            {vehiclePhoto && (
+              <ImageView label="Vehicle photo" source={vehiclePhoto} />
+            )}
+            <View
+              style={{
+                flexDirection: "row",
+              }}
+            >
               <CustomButton
-                title="Add license plate's photo"
+                iconName={licensePhoto ? "autorenew" : "add-a-photo"}
+                title="License plate"
                 onPress={() => {
                   typeRef.current = "license";
                   openAlert();
                 }}
+                containerStyle={{
+                  width: "40%",
+                  margin: 10,
+                  alignSelf: "center",
+                }}
               />
+              {licensePhoto && (
+                <CustomButton
+                  iconName={"delete"}
+                  containerStyle={{
+                    margin: 10,
+                    alignSelf: "center",
+                  }}
+                  buttonColor="red"
+                  title={"Remove"}
+                  onPress={() => setLicensePhoto(undefined)}
+                />
+              )}
             </View>
             {/* <CustomButton title="Make fetch call" onPress={fetchData} /> */}
             {licensePhoto && (
               <ImageView label="License photo" source={licensePhoto} />
-            )}
-            {vehiclePhoto && (
-              <ImageView label="Vehicle photo" source={vehiclePhoto} />
             )}
             <InputField
               label="Enter the license plate"
@@ -180,9 +266,18 @@ export default function App() {
               />
             )}
             <CustomButton
-              onPress={openAlert}
-              title={"Report Violation"}
-              containerStyle={{ alignSelf: "center", marginTop: 10 }}
+              onPress={() =>
+                Alert.alert("Email has been successfully sent to user")
+              }
+              title={"Send report"}
+              disabled={
+                !vehiclePhoto ||
+                !licensePhoto ||
+                !licensePlate ||
+                !violation ||
+                (violation === "Others" && !violationDescription)
+              }
+              containerStyle={{ alignSelf: "center", marginTop: 20 }}
             />
           </View>
           <StatusBar style="auto" />

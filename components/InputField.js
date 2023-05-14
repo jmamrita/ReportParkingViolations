@@ -27,7 +27,7 @@ export const InputField = ({
 const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
-    padding: 10,
+    padding: 11,
     borderRadius: 5,
   },
 });

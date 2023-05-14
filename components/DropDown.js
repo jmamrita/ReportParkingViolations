@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 
 export const CustomDropdown = ({ options, onSelect }) => {
@@ -35,17 +35,20 @@ export const CustomDropdown = ({ options, onSelect }) => {
         <MaterialIcons
           name={showOptions ? "keyboard-arrow-up" : "keyboard-arrow-down"}
           size={24}
-          style={{ paddingVertical: 10 }}
+          style={{ paddingVertical: 9 }}
         />
       </TouchableOpacity>
       {showOptions && (
-        <View
+        <ScrollView
+          showsVerticalScrollIndicator
+          nestedScrollEnabled={true}
           style={{
             borderBottomWidth: 1,
             borderLeftWidth: 1,
             borderRightWidth: 1,
             borderBottomLeftRadius: 5,
             borderBottomRightRadius: 5,
+            height: 200,
           }}
         >
           {options.map((option, index) => (
@@ -57,7 +60,7 @@ export const CustomDropdown = ({ options, onSelect }) => {
               <Text>{option}</Text>
             </TouchableOpacity>
           ))}
-        </View>
+        </ScrollView>
       )}
     </View>
   );

@@ -6,6 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/favicon.png",
     "userInterfaceStyle": "light",
+    "scheme": "reportparkingviolation",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
