@@ -20,11 +20,8 @@ import {
 } from "./components";
 import { violationOptions } from "./constants";
 import * as WebBrowser from "expo-web-browser";
-import {
-  makeRedirectUri,
-  useAuthRequest,
-  useAutoDiscovery,
-} from "expo-auth-session";
+import * as AuthSession from "expo-auth-session";
+import * as FileSystem from "expo-file-system";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -40,19 +37,82 @@ export default function App() {
   const typeRef = useRef();
   let cameraRef = useRef();
 
-  const discovery = useAutoDiscovery(
-    "https://login.microsoftonline.com/72f988bf-86f1-41af-91ab-2d7cd011db47/v2.0"
+  const tenantID = "72f988bf-86f1-41af-91ab-2d7cd011db47";
+  const clientID = "b56ecdc1-5106-47f3-8777-ad784d1118f6";
+
+  const [discovery, $discovery] = useState();
+  const [authRequest, $authRequest] = useState();
+  const [authorizeResult, $authorizeResult] = useState();
+  const scopes = ["openid", "profile", "email", "offline_access"];
+  const domain = `https://login.microsoftonline.com/${tenantID}/v2.0`;
+  const redirectUrl = AuthSession.makeRedirectUri(
+    __DEV__ ? { scheme: "reportparkingviolation" } : {}
   );
-  const [request, response, promptAsync] = useAuthRequest(
-    {
-      clientId: "b56ecdc1-5106-47f3-8777-ad784d1118f6",
-      scopes: ["openid", "profile", "email", "offline_access"],
-      redirectUri: makeRedirectUri({
-        scheme: "reportparkingviolation",
-      }),
-    },
-    discovery
-  );
+
+  useEffect(() => {
+    const getSession = async () => {
+      const d = await AuthSession.fetchDiscoveryAsync(domain);
+
+      const authRequestOptions = {
+        prompt: AuthSession.Prompt.Login,
+        responseType: AuthSession.ResponseType.Code,
+        scopes: scopes,
+        usePKCE: true,
+        clientId: clientID,
+        redirectUri: __DEV__ ? redirectUrl : redirectUrl + "example",
+      };
+      const authRequest = new AuthSession.AuthRequest(authRequestOptions);
+      $authRequest(authRequest);
+      $discovery(d);
+    };
+    getSession();
+  }, []);
+
+  useEffect(() => {
+    const getCodeExchange = async () => {
+      const tokenResult = await AuthSession.exchangeCodeAsync(
+        {
+          code: authorizeResult.params.code,
+          clientId: clientID,
+          redirectUri: __DEV__ ? redirectUrl : redirectUrl + "example",
+          extraParams: {
+            code_verifier: authRequest.codeVerifier || "",
+          },
+        },
+        discovery
+      );
+      const { accessToken, refreshToken, issuedAt, expiresIn } = tokenResult;
+      console.log(accessToken, refreshToken, issuedAt, expiresIn);
+      const response = await fetch(
+        `https://graph.microsoft.com/oidc/userinfo`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+      const responseJson = await response.json();
+      const { family_name, given_name, email } = responseJson;
+      console.log(family_name, given_name, email);
+      return navigation.navigate("YOUR_NEXT_SCREEN");
+    };
+
+    if (authorizeResult && authorizeResult.type == "error") {
+      //Handle error
+    }
+
+    if (
+      authorizeResult &&
+      authorizeResult.type == "success" &&
+      authRequest &&
+      authRequest.codeVerifier
+    ) {
+      getCodeExchange();
+    }
+  }, [authorizeResult, authRequest]);
+
+  let vehicleBase64;
+  let licenseBase64;
 
   // Camera related code
   useEffect(() => {
@@ -64,6 +124,28 @@ export default function App() {
       setHasMediaLibraryPermission(mediaLibraryPermission.status === "granted");
     })();
   }, []);
+
+  useEffect(() => {
+    (async () => {
+      console.log(vehiclePhoto);
+      if (vehiclePhoto) {
+        vehicleBase64 = await FileSystem.readAsStringAsync(vehiclePhoto, {
+          encoding: "base64",
+        });
+      }
+    })();
+  }, [vehiclePhoto]);
+
+  useEffect(() => {
+    (async () => {
+      console.log(licensePhoto);
+      if (licensePhoto) {
+        licenseBase64 = await FileSystem.readAsStringAsync(vehiclePhoto, {
+          encoding: "base64",
+        });
+      }
+    })();
+  }, [licensePhoto]);
 
   const takeImage = async () => {
     if (!hasCameraPermission) {
@@ -109,23 +191,46 @@ export default function App() {
   const handleViolationChange = (value) => {
     setViolationDescription(value);
   };
-  // const [data, setData] = useState();
-  // const fetchData = () => {
-  //   fetch(
-  //     "https://dwp-nonprod.azure-api.net/smartparking/v1.0/vehicle/region/1/registration/admin?license=",
-  //     {
-  //       headers: {
-  //         "SmartParking-Apim-Subscription-Key":
-  //           "296b3ec4113047c0922a3b2f6a282a4e",
-  //         Authorization: "",
-  //       },
-  //     }
-  //   )
-  //     .then((response) => response.json())
-  //     .then((json) => setData(json))
-  //     .catch((error) => console.error(error));
-  //   console.log("HERE IS  THE RESULT");
-  // };
+
+  const [data, setData] = useState();
+  const fetchData = () => {
+    fetch(
+      `https://dwp-nonprod.azure-api.net/smartparking/v1.0/vehicle/region/1/registration/ammukherjee`,
+      {
+        headers: {
+          "SmartParking-Apim-Subscription-Key":
+            "296b3ec4113047c0922a3b2f6a282a4e",
+          Authorization: "Bearer ",
+        },
+      }
+    )
+      .then((response) => response.json())
+      .then((json) => setData(json))
+      .catch((error) => console.error(error));
+    console.log("HERE IS  THE RESULT");
+    console.log(data);
+  };
+
+  const sendEmail = () => {
+    fetch(
+      `https://prod-88.westus.logic.azure.com:443/workflows/9645ddc648414d71ae4a9088af39a54d/triggers/manual/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=SWHyMvq3DE6t6Oq1GIASgE1U7r9gP96j89Ljk_JBBTA`,
+      {
+        method: "POST",
+        headers: {
+          "Content-type": "application/json",
+        },
+        body: JSON.stringify({
+          to: "ammukherjee@microsoft.com",
+          subject: `Parking violation for license plate: ${licensePlate.toUpperCase()}`,
+          email_body: `<body><h1>${
+            violation === "Others" ? violationDescription : violation
+          }</h1><img src='data:image/png;base64,${licenseBase64}' alt='licenseplate photo'><img src='data:image/png;base64,${vehicleBase64}'></body>`,
+        }),
+      }
+    )
+      .then((response) => response.json())
+      .then((json) => setData(json));
+  };
 
   const openAlert = () => {
     Alert.alert(
@@ -160,10 +265,12 @@ export default function App() {
             }}
           >
             <Button
-              disabled={!request}
               title="Login"
-              onPress={() => {
-                promptAsync();
+              onPress={async () => {
+                const authorizeResult = await authRequest.promptAsync(
+                  discovery
+                );
+                $authorizeResult(authorizeResult);
               }}
             />
             <Text
@@ -241,10 +348,11 @@ export default function App() {
                 />
               )}
             </View>
-            {/* <CustomButton title="Make fetch call" onPress={fetchData} /> */}
+            <CustomButton title="Make fetch call" onPress={fetchData} />
             {licensePhoto && (
               <ImageView label="License photo" source={licensePhoto} />
             )}
+            <Text>{data?.user?.firstName ?? "Waiting"}</Text>
             <InputField
               label="Enter the license plate"
               placeholder={"Enter the license plate"}
@@ -266,9 +374,10 @@ export default function App() {
               />
             )}
             <CustomButton
-              onPress={() =>
-                Alert.alert("Email has been successfully sent to user")
-              }
+              onPress={() => {
+                sendEmail();
+                Alert.alert("Email has been successfully sent to user");
+              }}
               title={"Send report"}
               disabled={
                 !vehiclePhoto ||
