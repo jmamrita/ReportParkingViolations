@@ -28,7 +28,7 @@ WebBrowser.maybeCompleteAuthSession();
 export default function App() {
   const [licensePlate, setLicensePlate] = useState("");
   const [violationDescription, setViolationDescription] = useState("");
-  const [violation, setViolation] = useState();
+  const [violation, setViolation] = useState("");
   const [hasCameraPermission, setHasCameraPermission] = useState();
   const [hasMediaLibraryPermission, setHasMediaLibraryPermission] = useState();
   const [isCameraOpen, setIsCameraOpen] = useState();
@@ -36,6 +36,9 @@ export default function App() {
   const [vehiclePhoto, setVehiclePhoto] = useState();
   const typeRef = useRef();
   let cameraRef = useRef();
+  let vehicleBase64 = useRef(null);
+  let licenseBase64 = useRef(null);
+  let shouldClear = useRef();
 
   const tenantID = "72f988bf-86f1-41af-91ab-2d7cd011db47";
   const clientID = "b56ecdc1-5106-47f3-8777-ad784d1118f6";
@@ -52,7 +55,6 @@ export default function App() {
   useEffect(() => {
     const getSession = async () => {
       const d = await AuthSession.fetchDiscoveryAsync(domain);
-
       const authRequestOptions = {
         prompt: AuthSession.Prompt.Login,
         responseType: AuthSession.ResponseType.Code,
@@ -96,11 +98,9 @@ export default function App() {
       console.log(family_name, given_name, email);
       return navigation.navigate("YOUR_NEXT_SCREEN");
     };
-
     if (authorizeResult && authorizeResult.type == "error") {
       //Handle error
     }
-
     if (
       authorizeResult &&
       authorizeResult.type == "success" &&
@@ -110,9 +110,6 @@ export default function App() {
       getCodeExchange();
     }
   }, [authorizeResult, authRequest]);
-
-  let vehicleBase64;
-  let licenseBase64;
 
   // Camera related code
   useEffect(() => {
@@ -127,22 +124,26 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
-      console.log(vehiclePhoto);
       if (vehiclePhoto) {
-        vehicleBase64 = await FileSystem.readAsStringAsync(vehiclePhoto, {
-          encoding: "base64",
-        });
+        vehicleBase64.current = await FileSystem.readAsStringAsync(
+          vehiclePhoto,
+          {
+            encoding: "base64",
+          }
+        );
       }
     })();
   }, [vehiclePhoto]);
 
   useEffect(() => {
     (async () => {
-      console.log(licensePhoto);
       if (licensePhoto) {
-        licenseBase64 = await FileSystem.readAsStringAsync(vehiclePhoto, {
-          encoding: "base64",
-        });
+        licenseBase64.current = await FileSystem.readAsStringAsync(
+          licensePhoto,
+          {
+            encoding: "base64",
+          }
+        );
       }
     })();
   }, [licensePhoto]);
@@ -173,7 +174,6 @@ export default function App() {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsEditing: true,
-      aspect: [4, 3],
       quality: 1,
     });
     if (!result.canceled) {
@@ -193,23 +193,20 @@ export default function App() {
   };
 
   const [data, setData] = useState();
-  const fetchData = () => {
-    fetch(
-      `https://dwp-nonprod.azure-api.net/smartparking/v1.0/vehicle/region/1/registration/ammukherjee`,
-      {
-        headers: {
-          "SmartParking-Apim-Subscription-Key":
-            "296b3ec4113047c0922a3b2f6a282a4e",
-          Authorization: "Bearer ",
-        },
-      }
-    )
+
+  useEffect(() => {
+    let url = `https://dwp-nonprod.azure-api.net/smartparking/v1.0/vehicle/region/4/registration/admin?licensePlate=${licensePlate}`;
+    fetch(url, {
+      headers: {
+        "SmartParking-Apim-Subscription-Key":
+          "296b3ec4113047c0922a3b2f6a282a4e",
+        Authorization:
+          "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6Ii1LSTNROW5OUjdiUm9meG1lWm9YcWJIWkdldyIsImtpZCI6Ii1LSTNROW5OUjdiUm9meG1lWm9YcWJIWkdldyJ9.eyJhdWQiOiJodHRwczovL21pY3Jvc29mdC5vbm1pY3Jvc29mdC5jb20vc21hcnRQYXJraW5nQVBJTm9uUHJvZCIsImlzcyI6Imh0dHBzOi8vc3RzLndpbmRvd3MubmV0LzcyZjk4OGJmLTg2ZjEtNDFhZi05MWFiLTJkN2NkMDExZGI0Ny8iLCJpYXQiOjE2ODQ2OTQyNTQsIm5iZiI6MTY4NDY5NDI1NCwiZXhwIjoxNjg0Njk5NDQ2LCJhY3IiOiIxIiwiYWlvIjoiQVZRQXEvOFRBQUFBSGpJREhnVHF1YmZURHFpUlkrelFnU3h3WDA0RnBSaEZ0ZkFkMGNYMEZIQldscHZlRmFST3NtT2dlNHZqKzdRR0x0UTRWdlMxMFV1YUQxSzlPaTBUUE42STdJNm5Fam83Q25UWmdpazhuYUk9IiwiYW1yIjpbInB3ZCIsInJzYSIsIm1mYSJdLCJhcHBpZCI6IjI1MjIyMzhmLTcwMmMtNDYzNC04YmM4LTQ0YTJkNTdhN2M2NSIsImFwcGlkYWNyIjoiMCIsImRldmljZWlkIjoiYmY3OTU5NGItZWYxMS00YjFhLTgxM2EtZTFmYTlkM2I5N2ViIiwiZmFtaWx5X25hbWUiOiJNdWtoZXJqZWUiLCJnaXZlbl9uYW1lIjoiQW1yaXRhIiwiaXBhZGRyIjoiMjQwNjpiNDAwOmI0OjczYzE6ZThhZDo3ZGVjOmUwY2I6YmFmMSIsIm5hbWUiOiJBbXJpdGEgTXVraGVyamVlIiwib2lkIjoiNmEwNjYzYjMtYzdmNS00MDE4LTlhNWMtOWYwOTMxODA3MjIzIiwib25wcmVtX3NpZCI6IlMtMS01LTIxLTIxNDY3NzMwODUtOTAzMzYzMjg1LTcxOTM0NDcwNy0yNzI0OTQyIiwicmgiOiIwLkFSb0F2NGo1Y3ZHR3IwR1JxeTE4MEJIYlJ3RWxpSWlHQWlGRmt5cDZhMk5iZUhrYUFIOC4iLCJyb2xlcyI6WyJQYXJraW5nLkFkbWluIl0sInNjcCI6InVzZXJfaW1wZXJzb25hdGlvbiIsInN1YiI6Ikd3cTItcXdaUWdFd1lFckRoOWJaWWxkOVhKN2h1OFVENDlFUW5uTy1EQWciLCJ0aWQiOiI3MmY5ODhiZi04NmYxLTQxYWYtOTFhYi0yZDdjZDAxMWRiNDciLCJ1bmlxdWVfbmFtZSI6ImFtbXVraGVyamVlQG1pY3Jvc29mdC5jb20iLCJ1cG4iOiJhbW11a2hlcmplZUBtaWNyb3NvZnQuY29tIiwidXRpIjoibDFJTFFvVVA5RTZpNVo5d2o5Y3FBQSIsInZlciI6IjEuMCJ9.nv59RIK1rztpVmTbEmVmKTBn5L0Swb5iyNDdEnnKsIk0NhZbuBv__pZFgulES7E4OvfaVDOoSpPFXY3ypII7oLv4YtFsjGTe8-nWUbFYl4-Etw5CzC5yvlF53JrN9b8lCFkDySxwXG8lgErNQ2z1bQpLHPZGUdqQ3THXIf6OlvqlHeraO8gfCSdefDYONLpoHZKKRTLQ6sV00BMQbk1rD3Ln7Gv0EJjDYR-I5q6rYYTsJaCL3xYk7dEMgIknDp9xMVVHYLlaKsooql9PhSlc1gZ6w-feO2mSL1HTbbWehI_L3ryFdFKpjueuwBOdh0kuqWWKv5pASQdEQTXly0duEA",
+      },
+    })
       .then((response) => response.json())
-      .then((json) => setData(json))
-      .catch((error) => console.error(error));
-    console.log("HERE IS  THE RESULT");
-    console.log(data);
-  };
+      .then((json) => setData(json));
+  }, [licensePlate]);
 
   const sendEmail = () => {
     fetch(
@@ -220,11 +217,12 @@ export default function App() {
           "Content-type": "application/json",
         },
         body: JSON.stringify({
-          to: "ammukherjee@microsoft.com",
+          to: `${data?.user?.userAlias}@microsoft.com`,
           subject: `Parking violation for license plate: ${licensePlate.toUpperCase()}`,
-          email_body: `<body><h1>${
-            violation === "Others" ? violationDescription : violation
-          }</h1><img src='data:image/png;base64,${licenseBase64}' alt='licenseplate photo'><img src='data:image/png;base64,${vehicleBase64}'></body>`,
+          name: `${data?.user?.firstName} ${data?.user?.lastName}`,
+          violation: violation === "Others" ? violationDescription : violation,
+          vehiclePhotoBase64: vehicleBase64.current,
+          licensePhotoBase64: licenseBase64.current,
         }),
       }
     )
@@ -348,11 +346,9 @@ export default function App() {
                 />
               )}
             </View>
-            <CustomButton title="Make fetch call" onPress={fetchData} />
             {licensePhoto && (
               <ImageView label="License photo" source={licensePhoto} />
             )}
-            <Text>{data?.user?.firstName ?? "Waiting"}</Text>
             <InputField
               label="Enter the license plate"
               placeholder={"Enter the license plate"}
@@ -363,6 +359,7 @@ export default function App() {
             <CustomDropdown
               options={violationOptions}
               onSelect={handleSelect}
+              clear={shouldClear.current}
             />
             {violation === "Others" && (
               <InputField
@@ -376,7 +373,22 @@ export default function App() {
             <CustomButton
               onPress={() => {
                 sendEmail();
-                Alert.alert("Email has been successfully sent to user");
+                Alert.alert(
+                  "Email has been sent successfully",
+                  "Return to application",
+                  [
+                    {
+                      text: "OK",
+                      onPress: () => {
+                        setLicensePhoto(undefined),
+                          setVehiclePhoto(undefined),
+                          setLicensePlate(undefined),
+                          (shouldClear.current = true),
+                          setViolationDescription(undefined);
+                      },
+                    },
+                  ]
+                );
               }}
               title={"Send report"}
               disabled={

@@ -5,7 +5,11 @@ export const ImageView = ({ label, source }) => {
   return (
     <View>
       <Text style={styles.text}>{label}</Text>
-      <ImageBackground source={{ uri: source }} style={styles.image} />
+      <ImageBackground
+        source={{ uri: source }}
+        style={styles.image}
+        resizeMode="contain"
+      />
     </View>
   );
 };

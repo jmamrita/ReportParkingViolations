@@ -2,11 +2,12 @@ import React, { useState } from "react";
 import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 
-export const CustomDropdown = ({ options, onSelect }) => {
+export const CustomDropdown = ({ options, onSelect, clear }) => {
   const [selectedOption, setSelectedOption] = useState(null);
   const [showOptions, setShowOptions] = useState(false);
 
   const handleSelect = (option) => {
+    clear = false;
     setSelectedOption(option);
     setShowOptions(false);
     onSelect(option);
@@ -30,7 +31,9 @@ export const CustomDropdown = ({ options, onSelect }) => {
         }}
       >
         <Text style={{ textAlign: "center", paddingVertical: 12 }}>
-          {selectedOption || "Select a parking violation"}
+          {clear
+            ? "Select a parking violation"
+            : selectedOption || "Select a parking violation"}
         </Text>
         <MaterialIcons
           name={showOptions ? "keyboard-arrow-up" : "keyboard-arrow-down"}
